@@ -65,6 +65,11 @@ const altitudeMetric = document.querySelector("#altitudeMetric");
 const speedMetric = document.querySelector("#speedMetric");
 const sectorBreakdown = document.querySelector("#sectorBreakdown");
 const searchHint = document.querySelector("#searchHint");
+const altitudeFilter = document.querySelector("#altitudeFilter");
+const speedFilter = document.querySelector("#speedFilter");
+const countryFilter = document.querySelector("#countryFilter");
+const statusFilter = document.querySelector("#statusFilter");
+const resetFiltersButton = document.querySelector("#resetFiltersButton");
 const filters = new Map(
   [...document.querySelectorAll("[data-sector-filter]")].map((input) => [
     input.dataset.sectorFilter,
@@ -133,6 +138,71 @@ function matchesSearch(flight) {
   return [flight.callsign, flight.icao24, flight.originCountry, flight.sector]
     .filter(Boolean)
     .some((value) => value.toUpperCase().includes(query));
+}
+
+function getAltitudeFeet(flight) {
+  return Number.isFinite(flight.altitudeMeters) ? flight.altitudeMeters * 3.28084 : 0;
+}
+
+function getSpeedKnots(flight) {
+  return Number.isFinite(flight.velocityMetersPerSecond)
+    ? flight.velocityMetersPerSecond * 1.94384
+    : 0;
+}
+
+function matchesAltitudeFilter(flight) {
+  const altitudeFeet = getAltitudeFeet(flight);
+
+  switch (altitudeFilter.value) {
+    case "surface":
+      return flight.onGround || altitudeFeet < 1000;
+    case "low":
+      return altitudeFeet >= 1000 && altitudeFeet < 10000;
+    case "mid":
+      return altitudeFeet >= 10000 && altitudeFeet < 30000;
+    case "high":
+      return altitudeFeet >= 30000;
+    default:
+      return true;
+  }
+}
+
+function matchesStatusFilter(flight) {
+  if (statusFilter.value === "airborne") {
+    return !flight.onGround;
+  }
+
+  if (statusFilter.value === "ground") {
+    return flight.onGround;
+  }
+
+  return true;
+}
+
+function matchesAdvancedFilters(flight) {
+  const countryQuery = countryFilter.value.trim().toUpperCase();
+  const minimumSpeedKnots = Number(speedFilter.value) || 0;
+
+  return (
+    matchesAltitudeFilter(flight) &&
+    matchesStatusFilter(flight) &&
+    getSpeedKnots(flight) >= minimumSpeedKnots &&
+    (!countryQuery || flight.originCountry.toUpperCase().includes(countryQuery))
+  );
+}
+
+function resetFilters() {
+  searchInput.value = "";
+  altitudeFilter.value = "all";
+  speedFilter.value = "0";
+  countryFilter.value = "";
+  statusFilter.value = "all";
+
+  for (const input of filters.values()) {
+    input.checked = true;
+  }
+
+  applyFilters();
 }
 
 function flightDescription(flight) {
@@ -223,7 +293,10 @@ function applyFilters() {
       continue;
     }
 
-    const isVisible = (filters.get(flight.sector)?.checked ?? true) && matchesSearch(flight);
+    const isVisible =
+      (filters.get(flight.sector)?.checked ?? true) &&
+      matchesSearch(flight) &&
+      matchesAdvancedFilters(flight);
     entity.show = isVisible;
     if (isVisible) {
       visibleCount += 1;
@@ -233,7 +306,7 @@ function applyFilters() {
   visibleFlights.textContent = visibleCount.toLocaleString();
   searchHint.textContent = query
     ? `${visibleCount.toLocaleString()} visible matches for "${query}"`
-    : "Filter by callsign, ICAO24, country, or sector.";
+    : `${visibleCount.toLocaleString()} aircraft match the active filters.`;
 }
 
 function updateFlightInsights(flights) {
@@ -356,6 +429,11 @@ for (const input of filters.values()) {
   input.addEventListener("change", applyFilters);
 }
 
+[altitudeFilter, speedFilter, countryFilter, statusFilter].forEach((input) => {
+  input.addEventListener("input", applyFilters);
+  input.addEventListener("change", applyFilters);
+});
+
 searchInput.addEventListener("input", applyFilters);
 searchInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -364,6 +442,7 @@ searchInput.addEventListener("keydown", (event) => {
 });
 focusButton.addEventListener("click", focusSearchResult);
 resetViewButton.addEventListener("click", flyHome);
+resetFiltersButton.addEventListener("click", resetFilters);
 refreshButton.addEventListener("click", refreshFlights);
 refreshFlights();
 setInterval(refreshFlights, REFRESH_INTERVAL_MS);

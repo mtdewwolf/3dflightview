@@ -46,7 +46,8 @@ body::before {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -326,7 +327,9 @@ p {
   gap: 9px;
 }
 
-#searchInput {
+#searchInput,
+.filter-field input,
+.filter-field select {
   width: 100%;
   min-width: 0;
   padding: 12px 13px;
@@ -337,9 +340,88 @@ p {
   background: rgba(2, 6, 23, 0.64);
 }
 
-#searchInput:focus {
+#searchInput:focus,
+.filter-field input:focus,
+.filter-field select:focus {
   border-color: rgba(125, 211, 252, 0.8);
   box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
+}
+
+.filter-card {
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.64), rgba(8, 47, 73, 0.22)),
+    rgba(15, 23, 42, 0.48);
+}
+
+.filter-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.filter-card h2 {
+  margin-bottom: 4px;
+}
+
+.filter-card p {
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 7px;
+}
+
+.filter-field label {
+  color: #dbeafe;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.filter-field select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #7dd3fc 50%) right 14px center / 7px 7px
+      no-repeat,
+    linear-gradient(135deg, #7dd3fc 50%, transparent 50%) right 9px center / 7px 7px
+      no-repeat,
+    rgba(2, 6, 23, 0.64);
+}
+
+.filter-reset {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 999px;
+  color: #fde68a;
+  background: rgba(113, 63, 18, 0.22);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.filter-reset:hover {
+  background: rgba(113, 63, 18, 0.34);
+  transform: translateY(-1px);
 }
 
 .controls {
