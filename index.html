@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Flight View</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="ambient ambient-one"></div>
+      <div class="ambient ambient-two"></div>
+      <aside class="panel overview">
+        <header class="brand">
+          <span class="brand-mark" aria-hidden="true">✈</span>
+          <div>
+            <span class="eyebrow">Global ADS-B monitor</span>
+            <h1>3D Flight View</h1>
+          </div>
+          <span class="live-pill"><span class="pulse"></span>Live</span>
+        </header>
+        <p class="lede">Explore public aircraft positions across commercial, private, government, and unknown sectors.</p>
+
+        <section class="status-grid" aria-live="polite">
+          <div class="metric">
+            <span>Source</span>
+            <strong id="sourceName">OpenSky Network</strong>
+          </div>
+          <div class="metric">
+            <span>Last update</span>
+            <strong id="updatedAt">Waiting</strong>
+          </div>
+          <div class="metric">
+            <span>Total aircraft</span>
+            <strong id="totalFlights">0</strong>
+          </div>
+          <div class="metric">
+            <span>Visible aircraft</span>
+            <strong id="visibleFlights">0</strong>
+          </div>
+          <div class="metric">
+            <span>Avg altitude</span>
+            <strong id="altitudeMetric">0 ft</strong>
+          </div>
+          <div class="metric">
+            <span>Avg speed</span>
+            <strong id="speedMetric">0 kt</strong>
+          </div>
+        </section>
+
+        <p id="statusText" class="status-message">Loading public aircraft states...</p>
+
+        <section class="search-card" aria-label="Aircraft search">
+          <label for="searchInput">Find aircraft</label>
+          <div class="search-row">
+            <input id="searchInput" type="search" placeholder="Callsign, ICAO24, country, or sector" autocomplete="off" />
+            <button id="focusButton" class="secondary-button" type="button">Focus</button>
+          </div>
+          <p id="searchHint">Search after live data loads.</p>
+        </section>
+
+        <section class="controls" aria-label="Sector filters">
+          <label class="sector-toggle">
+            <input type="checkbox" data-sector-filter="commercial" checked />
+            Commercial
+          </label>
+          <label class="sector-toggle">
+            <input type="checkbox" data-sector-filter="private" checked />
+            Private
+          </label>
+          <label class="sector-toggle">
+            <input type="checkbox" data-sector-filter="government" checked />
+            Government
+          </label>
+          <label class="sector-toggle">
+            <input type="checkbox" data-sector-filter="unknown" checked />
+            Unknown
+          </label>
+        </section>
+
+        <div class="action-row">
+          <button id="refreshButton" class="primary-button" type="button">Refresh now</button>
+          <button id="resetViewButton" class="secondary-button" type="button">Globe view</button>
+        </div>
+
+        <p class="notice">
+          Public feeds can omit blocked, military, sensitive, or non-broadcasting
+          aircraft.
+        </p>
+      </aside>
+      <aside class="panel legend">
+        <h2>Sector intelligence</h2>
+        <ul id="sectorBreakdown">
+          <li>
+            <div class="sector-row"><span><span class="dot commercial"></span>Commercial</span><strong>0</strong></div>
+            <div class="bar" aria-hidden="true"><span class="commercial" style="width: 0%"></span></div>
+          </li>
+          <li>
+            <div class="sector-row"><span><span class="dot private"></span>Private</span><strong>0</strong></div>
+            <div class="bar" aria-hidden="true"><span class="private" style="width: 0%"></span></div>
+          </li>
+          <li>
+            <div class="sector-row"><span><span class="dot government"></span>Government</span><strong>0</strong></div>
+            <div class="bar" aria-hidden="true"><span class="government" style="width: 0%"></span></div>
+          </li>
+          <li>
+            <div class="sector-row"><span><span class="dot unknown"></span>Unknown</span><strong>0</strong></div>
+            <div class="bar" aria-hidden="true"><span class="unknown" style="width: 0%"></span></div>
+          </li>
+        </ul>
+        <p class="small">
+          Labels are heuristic because free live feeds generally do not include
+          authoritative operator sector metadata.
+        </p>
+      </aside>
+      <div class="map-credit">Free/public feed prototype</div>
+      <main id="cesiumContainer" aria-label="Live 3D flight map"></main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

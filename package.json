@@ -1,0 +1,18 @@
+{
+  "name": "3dflightview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Live 3D flight map prototype using free/public flight data.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "build": "vite build",
+    "check": "node --check src/main.js && node --check src/flightData.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cesium": "^1.140.0",
+    "vite": "^8.0.10",
+    "vite-plugin-cesium": "^1.2.23"
+  }
+}
