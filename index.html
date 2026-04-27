@@ -77,6 +77,49 @@
           </label>
         </section>
 
+        <section class="filter-card" aria-label="Advanced flight filters">
+          <header>
+            <div>
+              <h2>Filter options</h2>
+              <p>Combine sectors with flight state, altitude, speed, and origin country.</p>
+            </div>
+            <button id="resetFiltersButton" class="filter-reset" type="button">Reset</button>
+          </header>
+          <div class="filter-grid">
+            <div class="filter-field">
+              <label for="altitudeFilter">Altitude</label>
+              <select id="altitudeFilter">
+                <option value="all">All altitudes</option>
+                <option value="surface">Ground / taxi</option>
+                <option value="low">Low: under 10k ft</option>
+                <option value="mid">Cruise climb: 10k-30k ft</option>
+                <option value="high">High: over 30k ft</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="speedFilter">Speed</label>
+              <select id="speedFilter">
+                <option value="0">All speeds</option>
+                <option value="150">At least 150 kt</option>
+                <option value="300">At least 300 kt</option>
+                <option value="450">At least 450 kt</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="statusFilter">Flight state</label>
+              <select id="statusFilter">
+                <option value="all">Airborne and ground</option>
+                <option value="airborne">Airborne only</option>
+                <option value="ground">Ground only</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="countryFilter">Origin country</label>
+              <input id="countryFilter" type="text" placeholder="e.g. United States" autocomplete="off" />
+            </div>
+          </div>
+        </section>
+
         <div class="action-row">
           <button id="refreshButton" class="primary-button" type="button">Refresh now</button>
           <button id="resetViewButton" class="secondary-button" type="button">Globe view</button>
