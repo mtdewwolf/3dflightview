@@ -9,19 +9,29 @@ const SECTOR_META = {
   commercial: {
     label: "Commercial",
     color: Cesium.Color.CYAN,
+    cssClass: "commercial",
   },
   private: {
     label: "Private",
     color: Cesium.Color.YELLOW,
+    cssClass: "private",
   },
   government: {
     label: "Government",
     color: Cesium.Color.ORANGE,
+    cssClass: "government",
   },
   unknown: {
     label: "Unknown",
     color: Cesium.Color.WHITE,
+    cssClass: "unknown",
   },
+};
+const EMPTY_SECTOR_COUNTS = {
+  commercial: 0,
+  private: 0,
+  government: 0,
+  unknown: 0,
 };
 
 Cesium.Ion.defaultAccessToken = "";
@@ -48,6 +58,13 @@ const totalFlights = document.querySelector("#totalFlights");
 const visibleFlights = document.querySelector("#visibleFlights");
 const sourceName = document.querySelector("#sourceName");
 const refreshButton = document.querySelector("#refreshButton");
+const searchInput = document.querySelector("#searchInput");
+const focusButton = document.querySelector("#focusButton");
+const resetViewButton = document.querySelector("#resetViewButton");
+const altitudeMetric = document.querySelector("#altitudeMetric");
+const speedMetric = document.querySelector("#speedMetric");
+const sectorBreakdown = document.querySelector("#sectorBreakdown");
+const searchHint = document.querySelector("#searchHint");
 const filters = new Map(
   [...document.querySelectorAll("[data-sector-filter]")].map((input) => [
     input.dataset.sectorFilter,
@@ -61,6 +78,13 @@ let currentFlights = [];
 function setStatus(message, isError = false) {
   statusText.textContent = message;
   statusText.dataset.state = isError ? "error" : "ok";
+}
+
+function flyHome() {
+  viewer.camera.flyTo({
+    destination: INITIAL_VIEW,
+    duration: 1.2,
+  });
 }
 
 function formatAltitude(meters) {
@@ -93,6 +117,22 @@ function escapeHtml(value) {
 
     return entities[character];
   });
+}
+
+function formatCompactNumber(value) {
+  return Math.round(value).toLocaleString();
+}
+
+function matchesSearch(flight) {
+  const query = searchInput.value.trim().toUpperCase();
+
+  if (!query) {
+    return true;
+  }
+
+  return [flight.callsign, flight.icao24, flight.originCountry, flight.sector]
+    .filter(Boolean)
+    .some((value) => value.toUpperCase().includes(query));
 }
 
 function flightDescription(flight) {
@@ -175,6 +215,7 @@ function createAircraftIcon(color) {
 
 function applyFilters() {
   let visibleCount = 0;
+  const query = searchInput.value.trim();
 
   for (const flight of currentFlights) {
     const entity = flightEntities.get(flight.id);
@@ -182,7 +223,7 @@ function applyFilters() {
       continue;
     }
 
-    const isVisible = filters.get(flight.sector)?.checked ?? true;
+    const isVisible = (filters.get(flight.sector)?.checked ?? true) && matchesSearch(flight);
     entity.show = isVisible;
     if (isVisible) {
       visibleCount += 1;
@@ -190,6 +231,57 @@ function applyFilters() {
   }
 
   visibleFlights.textContent = visibleCount.toLocaleString();
+  searchHint.textContent = query
+    ? `${visibleCount.toLocaleString()} visible matches for "${query}"`
+    : "Filter by callsign, ICAO24, country, or sector.";
+}
+
+function updateFlightInsights(flights) {
+  const sectorCounts = { ...EMPTY_SECTOR_COUNTS };
+  let altitudeTotal = 0;
+  let altitudeCount = 0;
+  let speedTotal = 0;
+  let speedCount = 0;
+
+  for (const flight of flights) {
+    sectorCounts[flight.sector] = (sectorCounts[flight.sector] ?? 0) + 1;
+
+    if (Number.isFinite(flight.altitudeMeters) && !flight.onGround) {
+      altitudeTotal += flight.altitudeMeters;
+      altitudeCount += 1;
+    }
+
+    if (Number.isFinite(flight.velocityMetersPerSecond) && flight.velocityMetersPerSecond > 0) {
+      speedTotal += flight.velocityMetersPerSecond;
+      speedCount += 1;
+    }
+  }
+
+  altitudeMetric.textContent = altitudeCount
+    ? `${formatCompactNumber((altitudeTotal / altitudeCount) * 3.28084)} ft`
+    : "N/A";
+  speedMetric.textContent = speedCount
+    ? `${formatCompactNumber((speedTotal / speedCount) * 1.94384)} kt`
+    : "N/A";
+
+  sectorBreakdown.innerHTML = Object.entries(SECTOR_META)
+    .map(([sector, meta]) => {
+      const count = sectorCounts[sector] ?? 0;
+      const share = flights.length ? Math.round((count / flights.length) * 100) : 0;
+
+      return `
+        <li>
+          <div class="sector-row">
+            <span><span class="dot ${meta.cssClass}"></span>${meta.label}</span>
+            <strong>${count.toLocaleString()}</strong>
+          </div>
+          <div class="bar" aria-hidden="true">
+            <span class="${meta.cssClass}" style="width: ${share}%"></span>
+          </div>
+        </li>
+      `;
+    })
+    .join("");
 }
 
 function renderFlights(flights) {
@@ -215,7 +307,28 @@ function renderFlights(flights) {
 
   currentFlights = flights;
   totalFlights.textContent = flights.length.toLocaleString();
+  updateFlightInsights(flights);
   applyFilters();
+}
+
+function focusSearchResult() {
+  const match = currentFlights.find((flight) => {
+    const entity = flightEntities.get(flight.id);
+    return entity?.show && matchesSearch(flight);
+  });
+
+  if (!match) {
+    setStatus("No visible aircraft matches that search", true);
+    return;
+  }
+
+  const entity = flightEntities.get(match.id);
+  viewer.selectedEntity = entity;
+  viewer.flyTo(entity, {
+    duration: 1.1,
+    offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-35), 180000),
+  });
+  setStatus(`Focused ${match.callsign || match.icao24}`);
 }
 
 async function refreshFlights() {
@@ -243,6 +356,14 @@ for (const input of filters.values()) {
   input.addEventListener("change", applyFilters);
 }
 
+searchInput.addEventListener("input", applyFilters);
+searchInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    focusSearchResult();
+  }
+});
+focusButton.addEventListener("click", focusSearchResult);
+resetViewButton.addEventListener("click", flyHome);
 refreshButton.addEventListener("click", refreshFlights);
 refreshFlights();
 setInterval(refreshFlights, REFRESH_INTERVAL_MS);
